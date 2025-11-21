@@ -11,13 +11,12 @@ A RESTful API for a blog platform built with **Laravel 10**, implementing **JWT 
 - [Environment Setup](#environment-setup)
 - [Authentication](#authentication)
 - [API Endpoints](#api-endpoints)
-  - [Posts](#posts-1)
-  - [Comments](#comments-1)
+  - [Posts](#posts)
+  - [Comments](#comments)
 - [Roles and Permissions](#roles-and-permissions)
 - [Filtering, Search & Pagination](#filtering-search--pagination)
 - [Caching](#caching)
 - [Running Tests](#running-tests)
-
 ---
 
 ##  Features
@@ -35,7 +34,7 @@ A RESTful API for a blog platform built with **Laravel 10**, implementing **JWT 
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 * PHP 8+
 * Laravel 10
 * MySQL / SQLite
@@ -46,7 +45,7 @@ A RESTful API for a blog platform built with **Laravel 10**, implementing **JWT 
 
 ---
 
-## 🚀 Installation
+##  Installation
 1.  Clone the repository:
     ```bash
     git clone [https://github.com/yourusername/blog-api.git](https://github.com/yourusername/blog-api.git)
@@ -79,7 +78,7 @@ A RESTful API for a blog platform built with **Laravel 10**, implementing **JWT 
 
 ---
 
-## ⚙️ Environment Setup
+##  Environment Setup
 Configure your `.env` file for database and cache (Redis or file-based):
 
 ```dotenv
@@ -94,7 +93,7 @@ CACHE_DRIVER=file
 ```
 
 
-## 🔒 Authentication
+##  Authentication
 
 Use the returned token in the **Authorization: Bearer <JWT_TOKEN_HERE>** header for protected routes. 
 
@@ -152,7 +151,7 @@ Use the returned token in the **Authorization: Bearer <JWT_TOKEN_HERE>** header 
   "expires_in": 3600
 }
 ```
-## 🌐 API Endpoints
+##  API Endpoints
 
 ### Posts
 
@@ -196,13 +195,13 @@ Use the returned token in the **Authorization: Bearer <JWT_TOKEN_HERE>** header 
 ```
 
 
-## 🛡️ Roles and Permissions
+##  Roles and Permissions
 - **Admin**: Full access to all endpoints and operations.
 - **Author**: Can create posts and manage (update/delete) only their own posts.
 
 Implemented using Spatie Laravel Permission.
 
-## 🔍 Filtering, Search & Pagination
+##  Filtering, Search & Pagination
 
 The `/api/posts` endpoint accepts the following query parameters to filter, search, and manage the returned data:
 
@@ -219,13 +218,13 @@ The `/api/posts` endpoint accepts the following query parameters to filter, sear
 `GET /api/posts?search=tech&category=Technology&from=2025-11-01&to=2025-11-21&sort=-created_at&per_page=5`
 
 
-## 💾 Caching
+##  Caching
 
 * The list of posts is cached for **60 minutes** using a unique cache key that incorporates the **query parameters** (ensuring unique cache for unique requests).
 * The cache is automatically **cleared** whenever posts are created, updated, or deleted, guaranteeing data freshness.
 * This feature is implemented in the `PostController@index` method using **Laravel's Cache facade**.
 
-## 🧪 Running Tests
+##  Running Tests
 
 Before running tests, ensure a testing database is configured in the `.env.testing` file.
 
