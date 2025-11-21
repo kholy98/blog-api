@@ -4,99 +4,217 @@ namespace App\Http\Controllers;
 
 use App\Models\Post;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\UpdatePostRequest;
 use App\Http\Resources\PostResource;
-use App\Http\Resources\PostCollection;
+use Symfony\Component\HttpFoundation\Response;
 
 class PostController extends Controller
 {
-    // GET /api/posts
+    /**
+     * GET /api/posts
+     * List posts with search + filtering
+     */
     public function index(Request $request)
     {
-        $query = Post::with('author');
+        try {
+            $query = Post::with('author');
 
-        // search
-        if ($search = $request->query('search')) {
-            $query->where(function($q) use ($search) {
-                $q->where('title','like',"%{$search}%")
-                  ->orWhereHas('author', function($qa) use ($search) {
-                      $qa->where('name','like',"%{$search}%");
-                  })
-                  ->orWhere('category','like',"%{$search}%");
-            });
-        }
-
-        // filter by category
-        if ($category = $request->query('category')) {
-            $query->where('category', $category);
-        }
-
-        // filter by author id
-        if ($author = $request->query('author_id')) {
-            $query->where('author_id', $author);
-        }
-
-        // date range: ?from=YYYY-MM-DD&to=YYYY-MM-DD
-        if ($from = $request->query('from')) {
-            $query->whereDate('created_at', '>=', $from);
-        }
-        if ($to = $request->query('to')) {
-            $query->whereDate('created_at', '<=', $to);
-        }
-
-        // sorting optional: ?sort=created_at or -created_at for desc
-        if ($sort = $request->query('sort')) {
-            $direction = 'asc';
-            if (substr($sort,0,1) === '-') {
-                $direction = 'desc';
-                $sort = substr($sort,1);
+            // search
+            if ($search = $request->query('search')) {
+                $query->where(function($q) use ($search) {
+                    $q->where('title', 'like', "%{$search}%")
+                      ->orWhereHas('author', function ($qa) use ($search) {
+                          $qa->where('name', 'like', "%{$search}%");
+                      })
+                      ->orWhere('category', 'like', "%{$search}%");
+                });
             }
-            $query->orderBy($sort, $direction);
-        } else {
-            $query->latest();
+
+            // filter by category
+            if ($category = $request->query('category')) {
+                $query->where('category', $category);
+            }
+
+            // filter by author id
+            if ($author = $request->query('author_id')) {
+                $query->where('author_id', $author);
+            }
+
+            // date range
+            if ($from = $request->query('from')) {
+                $query->whereDate('created_at', '>=', $from);
+            }
+            if ($to = $request->query('to')) {
+                $query->whereDate('created_at', '<=', $to);
+            }
+
+            // sorting
+            if ($sort = $request->query('sort')) {
+                $direction = str_starts_with($sort, '-') ? 'desc' : 'asc';
+                $sort = ltrim($sort, '-');
+                $query->orderBy($sort, $direction);
+            } else {
+                $query->latest();
+            }
+
+            $perPage = intval($request->query('per_page', 10));
+            $posts = $query->paginate($perPage)->appends($request->query());
+
+            return PostResource::collection($posts);
+
+        } catch (\Exception $e) {
+            Log::error("POST INDEX ERROR: " . $e->getMessage());
+
+            return response()->json([
+                'error'   => 'Failed to fetch posts',
+                'message' => $e->getMessage(),
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
-        $perPage = intval($request->query('per_page', 10));
-        $posts = $query->paginate($perPage)->appends($request->query());
-
-        return PostResource::collection($posts);
     }
 
-    // POST /api/posts
+    /**
+     * POST /api/posts
+     * Create a new blog post
+     */
     public function store(StorePostRequest $request)
     {
-        $user = auth('api')->user();
+        try {
+            $user = auth('api')->user();
 
-        $data = $request->validated();
-        $data['author_id'] = $user->id; // ensure assigned to logged in user
+            // AUTHOR role only (admins can also create)
+            if (!$user->hasAnyRole(['admin', 'author'])) {
+                return response()->json([
+                    'error' => 'Unauthorized',
+                    'message' => 'You are not allowed to create posts.'
+                ], Response::HTTP_FORBIDDEN);
+            }
 
-        $post = Post::create($data);
+            $data = $request->validated();
+            $data['author_id'] = $user->id;
 
-        return new PostResource($post->load('author'));
+            $post = Post::create($data);
+
+            return new PostResource($post->load('author'));
+
+        } catch (\Exception $e) {
+            Log::error("POST CREATE ERROR: " . $e->getMessage());
+
+            return response()->json([
+                'error' => 'Failed to create post',
+                'message' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
-    // GET /api/posts/{post}
-    public function show(Post $post)
+    /**
+     * GET /api/posts/{post}
+     */
+    public function show($id)
     {
-        return new PostResource($post->load('author','comments.user'));
+        try {
+            $post = Post::with('author','comments.user')->find($id);
+
+            if (!$post) {
+                return response()->json([
+                    'error' => 'Post Not Found',
+                    'message' => "No post found with ID {$id}"
+                ], Response::HTTP_NOT_FOUND);
+            }
+
+            return new PostResource($post);
+
+        } catch (\Exception $e) {
+            Log::error("POST SHOW ERROR: " . $e->getMessage());
+
+            return response()->json([
+                'error' => 'Failed to show post',
+                'message' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
-    // PUT /api/posts/{post}
-    public function update(UpdatePostRequest $request, Post $post)
+    /**
+     * PUT /api/posts/{post}
+     * Admin OR Owner can update
+     */
+    public function update(UpdatePostRequest $request, $id)
     {
-        $this->authorize('update', $post);
+        try {
+            $post = Post::find($id);
 
-        $post->update($request->validated());
+            if (!$post) {
+                return response()->json([
+                    'error' => 'Post Not Found',
+                    'message' => "No post found with ID {$id}"
+                ], Response::HTTP_NOT_FOUND);
+            }
 
-        return new PostResource($post->fresh()->load('author'));
+            $user = auth('api')->user();
+
+            // admin or owner
+            if (!$user->hasRole('admin') && $user->id !== $post->author_id) {
+                return response()->json([
+                    'error' => 'Unauthorized',
+                    'message' => 'Only admins or the post owner can update this post.'
+                ], Response::HTTP_FORBIDDEN);
+            }
+
+            $post->update($request->validated());
+
+            return new PostResource($post->fresh()->load('author'));
+
+        } catch (\Exception $e) {
+            Log::error("POST UPDATE ERROR: " . $e->getMessage());
+
+            return response()->json([
+                'error' => 'Failed to update post',
+                'message' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
-    // DELETE /api/posts/{post}
-    public function destroy(Post $post)
+    /**
+     * DELETE /api/posts/{post}
+     * Admin OR Owner can delete
+     */
+    public function destroy($id)
     {
-        $this->authorize('delete', $post);
-        $post->delete();
-        return response()->json(['message' => 'Post deleted']);
+        try {
+            $post = Post::find($id);
+
+            if (!$post) {
+                return response()->json([
+                    'error' => 'Post Not Found',
+                    'message' => "No post found with ID {$id}"
+                ], Response::HTTP_NOT_FOUND);
+            }
+
+            $user = auth('api')->user();
+
+            //dd($user->getRoleNames());
+
+            if (!$user->hasRole('admin') && $user->id !== $post->author_id) {
+                return response()->json([
+                    'error' => 'Unauthorized',
+                    'message' => 'Only admins or the post owner can delete this post.'
+                ], Response::HTTP_FORBIDDEN);
+            }
+
+            $post->delete();
+
+            return response()->json([
+                'message' => 'Post deleted successfully'
+            ], Response::HTTP_OK);
+
+        } catch (\Exception $e) {
+            Log::error("POST DELETE ERROR: " . $e->getMessage());
+
+            return response()->json([
+                'error' => 'Failed to delete post',
+                'message' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 }
