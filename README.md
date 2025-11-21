@@ -1,59 +1,235 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# ✍️ Laravel Blog API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A RESTful API for a blog platform built with **Laravel 10**, implementing **JWT authentication**, **roles and permissions**, **CRUD operations**, **filtering**, **search**, **pagination**, **caching**, and **comments**.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 🧭 Table of Contents
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Installation](#installation)
+- [Environment Setup](#environment-setup)
+- [Authentication](#authentication)
+- [API Endpoints](#api-endpoints)
+  - [Posts](#posts-1)
+  - [Comments](#comments-1)
+- [Roles and Permissions](#roles-and-permissions)
+- [Filtering, Search & Pagination](#filtering-search--pagination)
+- [Caching](#caching)
+- [Running Tests](#running-tests)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+##  Features
+* JWT-based authentication
+* Role-based access: **admin** and **author**
+* CRUD operations for blog posts
+    * **Admin**: full access
+    * **Author**: create/update/delete own posts only
+* Filter posts by category, author, date range
+* Search posts by title, category, author name
+* Pagination support
+* Post caching for faster response
+* Commenting on posts
+* Unit & feature tests included
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## 🛠️ Tech Stack
+* PHP 8+
+* Laravel 10
+* MySQL / SQLite
+* JWT Authentication (`tymon/jwt-auth`)
+* Spatie Laravel Permission for roles
+* Laravel Resource API Responses
+* PHPUnit for testing
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-## Laravel Sponsors
+## 🚀 Installation
+1.  Clone the repository:
+    ```bash
+    git clone [https://github.com/yourusername/blog-api.git](https://github.com/yourusername/blog-api.git)
+    cd blog-api
+    ```
+2.  Install dependencies:
+    ```bash
+    composer install
+    ```
+3.  Copy `.env` file and configure database:
+    ```bash
+    cp .env.example .env
+    ```
+4.  Generate application key:
+    ```bash
+    php artisan key:generate
+    ```
+5.  Generate JWT secret:
+    ```bash
+    php artisan jwt:secret
+    ```
+6.  Run migrations and seed roles:
+    ```bash
+    php artisan migrate --seed
+    ```
+7.  Start development server:
+    ```bash
+    php artisan serve
+    ```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+---
 
-### Premium Partners
+## ⚙️ Environment Setup
+Configure your `.env` file for database and cache (Redis or file-based):
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+```dotenv
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=blog
+DB_USERNAME=root
+DB_PASSWORD=
 
-## Contributing
+CACHE_DRIVER=file
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
 
-## Code of Conduct
+## 🔒 Authentication
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Use the returned token in the **Authorization: Bearer <JWT_TOKEN_HERE>** header for protected routes. 
 
-## Security Vulnerabilities
+[Image of JWT authentication flow]
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
 
-## License
+---
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### Register
+
+`POST /api/auth/register`
+
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `name` | string | User's full name. |
+| `email` | string | Unique email address. |
+| `password` | string | User's password (min 8 chars). |
+| `password_confirmation` | string | Must match `password`. |
+
+**Request Example:**
+
+```json
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "password",
+  "password_confirmation": "password"
+}
+```
+
+### Login
+
+`POST /api/auth/login`
+
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `email` | string | User's registered email address. |
+| `password` | string | User's password. |
+
+**Request Example:**
+
+```json
+{
+  "email": "john@example.com",
+  "password": "password"
+}
+
+**Response Example:**
+
+```json
+{
+  "access_token": "JWT_TOKEN_HERE",
+  "token_type": "bearer",
+  "expires_in": 3600
+}
+```
+## 🌐 API Endpoints
+
+### Posts
+
+| Method | Endpoint | Description | Roles Allowed |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/posts` | List posts with search, filters, pagination | All authenticated users |
+| `POST` | `/api/posts` | Create a new post | Admin, Author |
+| `GET` | `/api/posts/{id}` | Get single post with author & comments | All authenticated users |
+| `PUT` | `/api/posts/{id}` | Update post | Admin or post owner |
+| `DELETE` | `/api/posts/{id}` | Delete post | Admin or post owner |
+
+
+
+### Comments
+
+| Method | Endpoint | Description | Roles Allowed |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/posts/{post}/comment` | Add comment to a post | Authenticated users |
+
+**Request:**
+
+```json
+{
+  "body": "This is a comment."
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": 1,
+  "post_id": 2,
+  "user": {
+    "id": 3,
+    "name": "Jane Doe"
+  },
+  "body": "This is a comment.",
+  "created_at": "2025-11-21T12:00:00"
+}
+```
+
+
+## 🛡️ Roles and Permissions
+- **Admin**: Full access to all endpoints and operations.
+- **Author**: Can create posts and manage (update/delete) only their own posts.
+
+Implemented using Spatie Laravel Permission.
+
+## 🔍 Filtering, Search & Pagination
+
+The `/api/posts` endpoint accepts the following query parameters to filter, search, and manage the returned data:
+
+| Parameter | Description |
+| :--- | :--- |
+| `search` | Searches posts by **title**, **category**, or **author** name. |
+| `category` | Filters posts by a specific category name. |
+| `author_id` | Filters posts by a specific author's ID. |
+| `from` / `to` | Filters posts created within a specific **date range**. |
+| `sort` | Sorts results by a specified field. Prefix with `-` for **descending** order (e.g., `-created_at`). |
+| `per_page` | Specifies the number of posts to return per page. |
+
+**Example:**
+`GET /api/posts?search=tech&category=Technology&from=2025-11-01&to=2025-11-21&sort=-created_at&per_page=5`
+
+
+## 💾 Caching
+
+* The list of posts is cached for **60 minutes** using a unique cache key that incorporates the **query parameters** (ensuring unique cache for unique requests).
+* The cache is automatically **cleared** whenever posts are created, updated, or deleted, guaranteeing data freshness.
+* This feature is implemented in the `PostController@index` method using **Laravel's Cache facade**.
+
+## 🧪 Running Tests
+
+Before running tests, ensure a testing database is configured in the `.env.testing` file.
+
+Run PHPUnit using the following command:
+
+```bash
+php artisan test
+
