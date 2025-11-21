@@ -9,6 +9,7 @@ use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\UpdatePostRequest;
 use App\Http\Resources\PostResource;
 use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Facades\Cache;
 
 class PostController extends Controller
 {
@@ -59,8 +60,14 @@ class PostController extends Controller
                 $query->latest();
             }
 
+            // Generate a cache key based on all query parameters
+            $cacheKey = 'posts:' . md5(json_encode($request->query()));
+
             $perPage = intval($request->query('per_page', 10));
-            $posts = $query->paginate($perPage)->appends($request->query());
+
+            $posts = Cache::remember($cacheKey, 60, function () use ($query, $perPage, $request) {
+                return $query->paginate($perPage)->appends($request->query());
+            });
 
             return PostResource::collection($posts);
 
