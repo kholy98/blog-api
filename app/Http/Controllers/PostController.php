@@ -43,11 +43,11 @@ class PostController extends Controller
             }
 
             // date range
-            if ($from = $request->query('from')) {
-                $query->whereDate('created_at', '>=', $from);
-            }
-            if ($to = $request->query('to')) {
-                $query->whereDate('created_at', '<=', $to);
+            if ($request->has(['from', 'to'])) {
+                $query->whereBetween('created_at', [
+                    $request->query('from'),
+                    $request->query('to')
+                ]);
             }
 
             // sorting
