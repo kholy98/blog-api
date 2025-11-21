@@ -1,6 +1,6 @@
 # ✍️ Laravel Blog API
 
-A RESTful API for a blog platform built with **Laravel 10**, implementing **JWT authentication**, **roles and permissions**, **CRUD operations**, **filtering**, **search**, **pagination**, **caching**, and **comments**.
+A RESTful API for a blog platform built with **Laravel 12**, implementing **JWT authentication**, **roles and permissions**, **CRUD operations**, **filtering**, **search**, **pagination**, **caching**, and **comments**.
 
 ---
 
@@ -36,8 +36,8 @@ A RESTful API for a blog platform built with **Laravel 10**, implementing **JWT 
 
 ##  Tech Stack
 * PHP 8+
-* Laravel 10
-* MySQL / SQLite
+* Laravel 12
+* MySQL
 * JWT Authentication (`tymon/jwt-auth`)
 * Spatie Laravel Permission for roles
 * Laravel Resource API Responses
@@ -48,7 +48,7 @@ A RESTful API for a blog platform built with **Laravel 10**, implementing **JWT 
 ##  Installation
 1.  Clone the repository:
     ```bash
-    git clone [https://github.com/yourusername/blog-api.git](https://github.com/yourusername/blog-api.git)
+    git clone https://github.com/kholy98/blog-api.git
     cd blog-api
     ```
 2.  Install dependencies:
