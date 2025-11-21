@@ -141,6 +141,7 @@ Use the returned token in the **Authorization: Bearer <JWT_TOKEN_HERE>** header 
   "email": "john@example.com",
   "password": "password"
 }
+```
 
 **Response Example:**
 
